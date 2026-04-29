@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ====== HELPERS ======
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function ehDono(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function ehAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.papel == 'admin';
+    }
+
+    // ====== users ======
+    // Leitura: qualquer autenticado (usado pelo ranking e perfil público).
+    // Criação: somente o próprio dono no momento do cadastro.
+    // Atualização: dono pode atualizar tudo MENOS uid, email, cpfHash e papel.
+    //              Admin pode atualizar qualquer campo.
+    // Exclusão: somente admin.
+    match /users/{uid} {
+      allow read: if autenticado();
+
+      allow create: if ehDono(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.papel == 'usuario';
+
+      allow update: if (ehDono(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['uid', 'email', 'cpfHash', 'papel']))
+        || ehAdmin();
+
+      allow delete: if ehAdmin();
+
+      // Respostas do usuário (quiz)
+      match /respostas/{perguntaId} {
+        allow read: if ehDono(uid) || ehAdmin();
+        allow create, update: if ehDono(uid);
+        allow delete: if ehAdmin();
+      }
+    }
+
+    // ====== perguntas ======
+    // Leitura: todo autenticado. Escrita: apenas admin.
+    match /perguntas/{id} {
+      allow read: if autenticado();
+      allow write: if ehAdmin();
+    }
+
+    // ====== premiacoes ======
+    // Leitura pública (qualquer pessoa pode ver). Escrita só admin.
+    match /premiacoes/{id} {
+      allow read: if true;
+      allow write: if ehAdmin();
+    }
+
+    // ====== parcerias ======
+    // Criação aberta (formulário público). Leitura/edição/exclusão só admin.
+    match /parcerias/{id} {
+      allow create: if true;
+      allow read, update, delete: if ehAdmin();
+    }
+
+    // ====== forumPosts ======
+    // Leitura: todo autenticado.
+    // Criação: só o próprio autor (request.resource.data.userId == auth.uid).
+    // Update: dono ou admin.
+    // Exclusão: dono ou admin.
+    match /forumPosts/{postId} {
+      allow read: if autenticado();
+
+      allow create: if autenticado()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if (autenticado() && resource.data.userId == request.auth.uid)
+        || ehAdmin();
+
+      allow delete: if (autenticado() && resource.data.userId == request.auth.uid)
+        || ehAdmin();
+
+      match /comentarios/{cId} {
+        allow read: if autenticado();
+        allow create: if autenticado()
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if (autenticado() && resource.data.userId == request.auth.uid)
+          || ehAdmin();
+      }
+    }
+  }
+}
