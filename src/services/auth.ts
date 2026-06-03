@@ -31,40 +31,56 @@ export type DadosCadastro = {
 export async function cadastrar(dados: DadosCadastro): Promise<User> {
   const cpfHashed = await hashCpf(dados.cpf);
 
-  const cpfExiste = await getDocs(
-    query(collection(db, "users"), where("cpfHash", "==", cpfHashed))
-  );
-  if (!cpfExiste.empty) {
-    throw new Error("Este CPF já está cadastrado.");
-  }
-
-  const nickExiste = await getDocs(
-    query(collection(db, "users"), where("nickname", "==", dados.nickname))
-  );
-  if (!nickExiste.empty) {
-    throw new Error("Este nickname já está em uso.");
-  }
-
+  // 1. Cria conta no Auth primeiro — necessário para autenticar antes das
+  //    leituras no Firestore (Rules exigem autenticação para ler `users`).
   const credential = await createUserWithEmailAndPassword(
     auth,
     dados.email,
     dados.senha
   );
 
-  await updateProfile(credential.user, { displayName: dados.nickname });
+  try {
+    // 2. Agora autenticado, verifica duplicidade de CPF e nickname.
+    const cpfExiste = await getDocs(
+      query(collection(db, "users"), where("cpfHash", "==", cpfHashed))
+    );
+    if (!cpfExiste.empty) {
+      throw new Error("Este CPF já está cadastrado.");
+    }
 
-  await setDoc(doc(db, "users", credential.user.uid), {
-    uid: credential.user.uid,
-    email: dados.email,
-    nomeCompleto: dados.nomeCompleto,
-    nickname: dados.nickname,
-    cpfHash: cpfHashed,
-    pontosTotais: 0,
-    papel: "usuario",
-    criadoEm: serverTimestamp(),
-  });
+    const nickExiste = await getDocs(
+      query(collection(db, "users"), where("nickname", "==", dados.nickname))
+    );
+    if (!nickExiste.empty) {
+      throw new Error("Este nickname já está em uso.");
+    }
 
-  return credential.user;
+    // 3. Sem duplicidade: completa o cadastro.
+    await updateProfile(credential.user, { displayName: dados.nickname });
+
+    await setDoc(doc(db, "users", credential.user.uid), {
+      uid: credential.user.uid,
+      email: dados.email,
+      nomeCompleto: dados.nomeCompleto,
+      nickname: dados.nickname,
+      cpfHash: cpfHashed,
+      pontosTotais: 0,
+      papel: "usuario",
+      criadoEm: serverTimestamp(),
+    });
+
+    return credential.user;
+  } catch (erro) {
+    // Cleanup: se algo deu errado, remove a conta Auth órfã para o
+    // usuário poder tentar de novo sem o e-mail ficar "preso".
+    try {
+      await credential.user.delete();
+    } catch {
+      // ignora — se delete falhar, a conta órfã pode precisar ser
+      // limpada manualmente no console Firebase Auth
+    }
+    throw erro;
+  }
 }
 
 export type DadosAtualizacao = {
