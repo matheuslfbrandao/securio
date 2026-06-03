@@ -95,7 +95,7 @@ export default function WelcomeScreen() {
           <View style={estilos.creditoLinha}>
             <Ionicons name="school" size={18} color={cores.primaria} />
             <Text style={estilos.creditoTexto}>
-              MVP do Trabalho de Conclusão de Curso
+              Prova de conceito do Trabalho de Conclusão de Curso
             </Text>
           </View>
 

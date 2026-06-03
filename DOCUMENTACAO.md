@@ -1,12 +1,12 @@
 # Documentação Técnica · Securio
 
-> Documento escrito em primeira pessoa por **Matheus Brandão**, com auxílio do **Claude (Opus 4.7)** da Anthropic através do **Claude Code** (plano Max 5x). Tanto o MVP funcional quanto esta documentação foram produzidos em sessões intensivas de pair programming com IA, com decisões de conteúdo e revisão final feitas pelo autor. A intenção desta documentação é servir como **guia técnico e estratégico** para pesquisadores que queiram dar continuidade ao projeto, registrando o que foi feito, por que foi feito e o que ainda precisa ser feito.
+> Documento escrito por **Matheus Brandão**. A prova de conceito funcional descrita aqui foi implementada com auxílio do **Claude (Opus 4.7)** da Anthropic, através do **Claude Code** (plano Max 5x), com a concepção, as decisões de conteúdo e a revisão final feitas pelo autor. A intenção desta documentação é servir como **guia técnico e estratégico** para pesquisadores que queiram dar continuidade ao projeto, registrando o que foi feito, por que foi feito e o que ainda precisa ser feito.
 
 ## ⚠️ Status do projeto e escopo do TCC
 
-O escopo formal do meu Trabalho de Conclusão de Curso era entregar um **protótipo de alta fidelidade no Figma** — um conjunto de telas estáticas e navegáveis demonstrando a proposta visual e a experiência de uso planejada. O cronograma original (Aug-Oct/2025) cobriu exatamente isso: pesquisa, planejamento, desenho das telas no Figma e integração entre elas como protótipo clicável.
+O escopo formal do meu Trabalho de Conclusão de Curso era entregar um **protótipo de média fidelidade no Figma** — um conjunto de telas navegáveis demonstrando a proposta visual e a experiência de uso planejada. O cronograma original (Aug-Oct/2025) cobriu exatamente isso: pesquisa, planejamento, desenho das telas no Figma e integração entre elas como protótipo clicável.
 
-Decidi ir além do que o TCC exigia. Usei o **Claude** da Anthropic (plano Max 5x) com a ferramenta **Claude Code** em sessões intensivas de pair programming, transformando o protótipo estático em um **MVP funcional navegável**. O resultado é o código deste repositório.
+Decidi ir além do que o TCC exigia. Usei o **Claude** da Anthropic (plano Max 5x) com a ferramenta **Claude Code** em sessões intensivas de pair programming, transformando o protótipo estático em uma **prova de conceito funcional navegável**. O resultado é o código deste repositório.
 
 **Por que essa entrega extra:**
 
@@ -14,11 +14,11 @@ Decidi ir além do que o TCC exigia. Usei o **Claude** da Anthropic (plano Max 5
 2. **Para trabalhos futuros:** quem pegar este projeto para desenvolvê-lo oficialmente em pesquisa ou produto não recebe apenas Figma — recebe arquitetura definida, fluxos navegáveis e código de referência. Isso reduz drasticamente a barreira de entrada.
 3. **Para mim:** aprendizado prático profundo de uma stack que eu não conhecia (React Native, Expo, Firebase, deploy moderno).
 
-Este MVP **não é um produto pronto para produção**. Ele é uma camada extra de prova-de-conceito sobre o protótipo Figma. Existem várias áreas em que conscientemente parei antes do nível de qualidade exigido por um produto comercial — testes, segurança server-side, performance otimizada, fidelidade visual pixel-perfeita, etc. Tudo isso está catalogado em **[Para quem for continuar este projeto](#para-quem-for-continuar-este-projeto)**.
+Esta prova de conceito **não é um produto pronto para produção**. Ela é uma camada extra sobre o protótipo Figma, com o propósito de demonstrar viabilidade técnica. Existem várias áreas em que conscientemente parei antes do nível de qualidade exigido por um produto comercial — testes, segurança server-side, performance otimizada, fidelidade visual pixel-perfeita, etc. Tudo isso está catalogado em **[Para quem for continuar este projeto](#para-quem-for-continuar-este-projeto)**.
 
 **Links de referência:**
 - 🎨 [Protótipo Figma original](https://www.figma.com/design/31mshRyEJ3thfybxoS4uLh/Securio---O-CyberQuiz?node-id=0-1) — fonte da verdade visual e entrega formal do TCC
-- 🌐 [Demo do MVP funcional](https://securio-woad.vercel.app)
+- 🌐 [Demo da prova de conceito](https://securio-woad.vercel.app)
 - 💻 [Código no GitHub](https://github.com/matheuslfbrandao/securio)
 
 ## Sumário
@@ -83,12 +83,12 @@ Estudei três caminhos para o backend:
 
 Escolhi **Firebase** por:
 
-- **Plano Spark é grátis para sempre** — 50k usuários ativos no Auth, 50k leituras/dia no Firestore, 1GB de storage. Para um TCC com escala pequena, sobra muito.
+- **Plano Spark é grátis para sempre** — 50k usuários ativos no Auth, 50k leituras/dia no Firestore, 1GB de storage. Para uma prova de conceito de escala pequena, sobra muito.
 - **Auth pronto** — email/senha, recuperação de senha, persistência de sessão (com `getReactNativePersistence` em RN), tudo encapsulado.
 - **Firestore em tempo real** — a leitura via `onSnapshot` no `PerfilContext` mantém os pontos do usuário sempre atualizados na UI sem precisar de polling.
 - **Comunidade grande** — qualquer dúvida tinha resposta no Stack Overflow.
 
-A decisão tem uma desvantagem que eu reconheço: lock-in. Migrar fora do Firebase no futuro exigiria reescrever a camada de dados. Para o MVP isso é aceitável, mas em um produto comercial de longo prazo eu reconsideraria.
+A decisão tem uma desvantagem que eu reconheço: lock-in. Migrar fora do Firebase no futuro exigiria reescrever a camada de dados. Para uma prova de conceito isso é aceitável, mas em um produto comercial de longo prazo eu reconsideraria.
 
 **Cloud Functions** foram inicialmente cogitadas para liberar a pergunta diária às 12h via cron. Decidi não usar porque: (1) Functions exigem o plano Blaze (cartão de crédito), e (2) consegui resolver o mesmo problema **sem servidor**, fazendo uma query no cliente que filtra `where("dataLiberacao", "<=", Timestamp.now())` ordenada decrescente. Cada pergunta nasce com seu `dataLiberacao` definido, e o app vê automaticamente a mais recente já liberada. Isso é defensável: "evitei custo desnecessário e uma dependência de infraestrutura, demonstrando que a lógica pode ser cliente quando o problema permite".
 
@@ -329,9 +329,9 @@ Os usuários são gerados de forma **determinística** com um RNG semeado, garan
 
 ## Processo de desenvolvimento com IA assistente
 
-> Este MVP foi desenvolvido em sessões intensivas de **pair programming com Claude (Opus 4.7)**, da Anthropic, através do **Claude Code** (CLI oficial), usando o **plano Max 5x**.
+> Esta prova de conceito foi implementada em sessões intensivas de **pair programming com Claude (Opus 4.7)**, da Anthropic, através do **Claude Code** (CLI oficial), usando o **plano Max 5x**.
 
-A entrega formal exigida pelo TCC era apenas o protótipo de alta fidelidade no Figma. A implementação deste MVP foi uma decisão minha de ir além do escopo — usei o Claude exatamente para viabilizar essa entrega extra em tempo hábil. Sem essa ferramenta, levantar uma stack que eu não dominava (React Native, Expo, Firebase, deploy moderno) e produzir um app navegável dentro da janela disponível seria muito mais difícil.
+A entrega formal exigida pelo TCC era apenas o protótipo de média fidelidade no Figma. A implementação desta prova de conceito foi uma decisão minha de ir além do escopo — usei o Claude exatamente para viabilizar essa entrega extra em tempo hábil. Sem essa ferramenta, levantar uma stack que eu não dominava (React Native, Expo, Firebase, deploy moderno) e produzir um app navegável dentro da janela disponível seria muito mais difícil.
 
 Considero que a integração responsável com IA é um diferencial profissional na engenharia atual, e por isso a transparência total:
 
@@ -341,7 +341,6 @@ Considero que a integração responsável com IA é um diferencial profissional 
 - **Código:** escrito colaborativamente. O modelo gerava propostas de implementação e eu validava, ajustava, ou pedia para refazer. Toda mudança passou pelo meu aval.
 - **Arquitetura:** definida em conversa. Quando o painel admin ficou grande demais, eu pedi para refatorar em abas — o modelo propôs uma estrutura, eu aprovei, ele executou.
 - **Bugs e troubleshooting:** o modelo me ajudou a diagnosticar problemas (cache do Metro com novo pacote, índices compostos do Firestore, animações travando no web). Eu validei cada hipótese em produção.
-- **Documentação:** este próprio documento foi co-escrito — eu defini o tom, os pontos a cobrir, e o nível de profundidade desejado.
 
 ### O que eu aprendi no processo
 
@@ -356,7 +355,7 @@ Considero que a integração responsável com IA é um diferencial profissional 
 - **Protótipo no Figma:** todas as telas desenhadas antes da implementação (a entrega formal do TCC).
 - **Identidade visual:** logo do escudo de circuito, paleta de cores cyberpunk.
 - **Conta e configurações dos serviços:** Firebase, Vercel, GitHub, e-mail de domínio acadêmico.
-- **Decisões finais sobre o produto:** o que entra no MVP, o que vai para roadmap, onde simplificar.
+- **Decisões finais sobre o produto:** o que entra na prova de conceito, o que vai para roadmap, onde simplificar.
 
 ### Reconhecendo o crédito
 
@@ -409,7 +408,7 @@ Configurado em `app.json` com `display: "standalone"`, theme color e splash scre
 
 ## Para quem for continuar este projeto
 
-Esta seção é a parte mais importante deste documento se você está pegando o Securio para evoluir até um produto real. Aqui catalogo tudo que conscientemente **deixei pendente** ou **simplifiquei** durante o desenvolvimento do MVP, com motivação e sugestão de como abordar cada item.
+Esta seção é a parte mais importante deste documento se você está pegando o Securio para evoluir até um produto real. Aqui catalogo tudo que conscientemente **deixei pendente** ou **simplifiquei** durante o desenvolvimento da prova de conceito, com motivação e sugestão de como abordar cada item.
 
 A intenção não é uma checklist superficial — é um guia técnico honesto do que separa este protótipo de um produto bem testado e robusto.
 
@@ -419,7 +418,7 @@ Pendências por ordem de criticidade:
 
 | # | Item | Por que falta | Como resolver |
 |---|---|---|---|
-| 1 | **Validação server-side de pontos** | Toda lógica de incremento de pontos roda no cliente. Em teoria, um usuário avançado pode editar `pontosTotais` direto via console do navegador (Firebase JS SDK exposto). Para o MVP foi aceitável, mas em produção é brecha crítica. | Migrar `registrarResposta` para uma **Cloud Function** que recebe a resposta, valida no servidor, calcula pontos, escreve no Firestore. Cliente só faz a chamada — não toca nos pontos diretamente. Plano Blaze necessário. |
+| 1 | **Validação server-side de pontos** | Toda lógica de incremento de pontos roda no cliente. Em teoria, um usuário avançado pode editar `pontosTotais` direto via console do navegador (Firebase JS SDK exposto). Para uma prova de conceito foi aceitável, mas em produção é brecha crítica. | Migrar `registrarResposta` para uma **Cloud Function** que recebe a resposta, valida no servidor, calcula pontos, escreve no Firestore. Cliente só faz a chamada — não toca nos pontos diretamente. Plano Blaze necessário. |
 | 2 | **Pen test e revisão OWASP** | Não foi feita auditoria de segurança formal. Apenas inspeção visual das Firestore Rules. | Contratar (ou pedir voluntário) um pentester para rodar OWASP Mobile Top 10 + revisar as `firestore.rules`. |
 | 3 | **Rate limiting em endpoints** | Firestore tem quotas globais, mas não há proteção contra brute force específico (ex: tentar logar 1000 vezes em 1 minuto). | Cloud Functions com middleware de rate limiting + Cloudflare na frente do Vercel. |
 | 4 | **2FA / MFA** | Não implementado. Firebase Auth suporta SMS-based MFA mas requer plano Identity Platform (pago). | Avaliar custo. Como alternativa: TOTP via app (Google Authenticator) implementado manualmente. |
@@ -592,7 +591,7 @@ Esta seção é especialmente importante para pesquisadores que queiram continua
 No estágio atual do projeto, **conscientemente não se tratou da conformidade com a LGPD nem se submeteu o projeto ao Comitê de Ética em Pesquisa (CEP) da UFVJM**, e isso é uma decisão fundamentada nos seguintes pontos:
 
 1. **O escopo deste TCC é uma revisão bibliográfica + protótipo demonstrativo.** Não há pesquisa empírica com usuários reais, não há coleta de dados de pesquisa, e não há sujeitos humanos sendo estudados.
-2. **O MVP funcional não está aberto ao público em campanha de captação de usuários.** Os cadastros existentes durante o desenvolvimento foram do próprio autor e de algumas pessoas próximas, exclusivamente para teste de funcionamento.
+2. **A prova de conceito funcional não está aberta ao público em campanha de captação de usuários.** Os cadastros existentes durante o desenvolvimento foram do próprio autor e de algumas pessoas próximas, exclusivamente para teste de funcionamento.
 3. **Não há análise estatística, comportamental ou inferencial** sendo feita sobre os dados de uso.
 4. **A defesa do TCC** apresenta a proposta e o protótipo, não resultados de uso real.
 
